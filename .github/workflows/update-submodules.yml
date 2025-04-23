@@ -1,0 +1,34 @@
+name: Auto-Update Submodules
+on:
+  schedule:
+    # 每天北京时间 8 点自动运行（UTC 0 点）
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'  # 关键！递归克隆所有子模块
+
+      - name: Update Submodules
+        run: |
+          # 更新所有子模块（包括嵌套）
+          git submodule update --remote --recursive
+
+          # 检查是否有更新
+          if [[ $(git status --porcelain) ]]; then
+            # 配置 Git 身份（必须）
+            git config user.name "GitHub Actions Bot"
+            git config user.email "actions@github.com"
+
+            # 提交并推送变更
+            git add .
+            git commit -m "Auto-Update: Submodules to latest versions"
+            git push
+          else
+            echo "No changes detected."
+          fi
